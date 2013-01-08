@@ -1,10 +1,38 @@
-// Including libraries
-var addon = require('../../build/Release/switcher_addon');
+/*
+ * Copyright (C) 2012-2013 Nicolas Bouillot (http://www.nicolasbouillot.net)
+ *
+ * This file is part of node-switcher.
+ *
+ * node-switcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * node-switcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with node-switcher.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-var videosource = addon.create("videotestsrc")
+var switcher_addon = require('../../build/Release/switcher_addon');
+
+process.on('exit', function () {
+    switcher_addon.close();
+    console.log('About to exit.');
+});
+process.on('SIGINT', function () {
+    switcher_addon.close();
+    console.log('Got SIGINT.  About to exit.');
+    process.exit(0);
+});
+
+var videosource = switcher_addon.create("videotestsrc")
 console.log( 'create videotestsource:', videosource );
 
-var videosink = addon.create("xvimagesink")
+var videosink = switcher_addon.create("xvimagesink")
 console.log( 'create video window:', videosink );
 
 var app = require('http').createServer(handler),
@@ -37,12 +65,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on("moveSlider1", function(data){
 	console.log("Slider1 moving: " + data + " at client " + socket.id);
-	addon.set(videosource, "videotestsrc/pattern", String(data) );
+	switcher_addon.set(videosource, "videotestsrc/pattern", String(data) );
 	socket.broadcast.emit("moveSlider1", data);
     });
 });
 
 
-console.log( 'connecting videosink to video source:',addon.invoke(videosink, "connect", ["/tmp/switcher_nodeserver_videotestsrc0_video"] ));
+console.log( 'connecting videosink to video source:',switcher_addon.invoke(videosink, "connect", ["/tmp/switcher_nodeserver_videotestsrc0_video"] ));
 
 console.log( 'now visit http://localhost:8082')
