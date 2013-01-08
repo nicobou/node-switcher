@@ -1,0 +1,61 @@
+node-switcher
+=============
+nodejs addon for switcher.
+
+License
+-------
+node-switcher is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+node-switcher is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with node-switcher.  If not, see <http://www.gnu.org/licenses/>.
+
+Author
+------
+* Nicolas Bouillot (http://www.nicolasbouillot.net)
+
+compiling
+---------
+You need to install switcher (https://code.sat.qc.ca/redmine/projects/switcher) from sources (develop branch).
+
+On Debian or Ubuntu GNU/Linux:
+
+  sudo apt-get install python-software-properties
+  sudo add-apt-repository ppa:chris-lea/node.js
+  sudo apt-get update
+  sudo apt-get install nodejs nodejs-dev npm
+  sudo npm install -g node-gyp
+
+Then, 
+
+  node-gyp configure
+  node-gyp build
+
+Running the tests example
+-------------------------
+
+  node examples/test.js
+
+clean
+-----
+
+  node-gyp clean
+
+
+Debugging
+---------
+
+  node-gyp rebuild
+  gdb --args node examples/test.js
+
+And then, in GDB:
+
+  r
+

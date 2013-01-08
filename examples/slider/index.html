@@ -1,0 +1,45 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Some GUI</title>
+<link type="text/css" href="css/ui-darkness/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+<script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.8.22.custom.min.js"></script>
+<!-- <script src="http://code.jquery.com/jquery-1.8.0.min.js"></script> -->
+<style type="text/css">
+.sl { 
+margin: 10px;
+width: 10px;
+/*float:right;*/
+}
+.container { 
+margin: 10px;
+width: 10px;
+float:left;
+
+}
+.number {
+margin: 10px;
+width: 100px;
+font-size:20px;
+}
+</style>
+<script src="sliders.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+<h1>Socket.io Proto</h1>
+<div><p id="status">Waiting for input</p></div>
+<div><p id="message"></p></div>  
+<button id="connect" onClick='connect()'/>Connect</button>
+<button id="send" onClick='send()'/>Send Message</button>
+<button id="disconnect" onClick='disconnect()'>Disconnect</button>
+<div class="container">
+<div id="slider1" class="sl"></div>
+<div id="number1" class="number">0</div>
+</div>
+
+</body>
+</html>
