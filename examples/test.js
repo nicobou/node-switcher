@@ -17,10 +17,38 @@
  * along with node-switcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var addon = require('../build/Release/switcher_addon');
+var switcher_addon = require('../build/Release/switcher_addon');
 
-console.log( 'create videotestsrc returned:', addon.create("audiotestsrc") );
+//please quit switcher properly
+process.on('exit', function () {
+    switcher_addon.close();
+    console.log('About to exit.');
+});
+process.on('SIGINT', function () {
+    switcher_addon.close();
+    console.log('Got SIGINT.  About to exit.');
+    process.exit(0);
+});
 
 
+//creation without a name
+console.log('unamed create returned:', 
+	     switcher_addon.create("audiotestsrc") );
+//creation with a name
+console.log('named create returned:', 
+	     switcher_addon.create("audiotestsrc","myaudiotest"));
+
+console.log('get myaudiotest property returned:', 
+	    switcher_addon.get("myaudiotest", "audiotestsrc/freq"));
+
+console.log('set myaudiotest property to 111 returned:', 
+	    switcher_addon.set("myaudiotest", "audiotestsrc/freq", "111"));
+
+console.log('get myaudiotest property returned:', 
+	    switcher_addon.get("myaudiotest", "audiotestsrc/freq"));
+
+//remove "myaudiotest
+console.log('remove myaudiotest returned:', 
+	    switcher_addon.remove("myaudiotest"));
 
 
