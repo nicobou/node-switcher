@@ -50,7 +50,7 @@ v8::Handle<v8::Value> Create(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
   }
   if (!args[0]->IsString() ) {
-    ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong first arguments type")));
+    ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong first arg type")));
     return scope.Close(v8::Undefined());
   }
   v8::String::AsciiValue first_arg(args[0]->ToString());
@@ -58,11 +58,12 @@ v8::Handle<v8::Value> Create(const v8::Arguments& args) {
   if (args.Length() ==2)
     {
       if (!args[1]->IsString() ) {
-	ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong second arguments type")));
+	ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong second arg type")));
 	return scope.Close(v8::Undefined());
       }
       v8::String::AsciiValue second_arg(args[1]->ToString());
-      name = v8::String::New(switcher_container[0]->create(std::string(*first_arg), std::string(*second_arg)).c_str());
+      name = v8::String::New(switcher_container[0]->create(std::string(*first_arg), 
+							   std::string(*second_arg)).c_str());
     }
   else
     name = v8::String::New(switcher_container[0]->create(std::string(*first_arg)).c_str());
@@ -93,7 +94,10 @@ v8::Handle<v8::Value> SetProperty(const v8::Arguments& args) {
   v8::String::AsciiValue property_name(args[1]->ToString());
   v8::String::AsciiValue property_val(args[2]->ToString());
 
-  v8::Handle<v8::Boolean> res = v8::Boolean::New(switcher_container[0]->set_property(std::string(*element_name), std::string(*property_name), std::string(*property_val)));
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->set_property(std::string(*element_name), 
+							 std::string(*property_name), 
+							 std::string(*property_val)));
   return scope.Close(res);
 }
 
@@ -110,11 +114,47 @@ v8::Handle<v8::Value> GetProperty(const v8::Arguments& args) {
   v8::String::AsciiValue element_name(args[0]->ToString());
   v8::String::AsciiValue property_name(args[1]->ToString());
 
-  v8::Handle<v8::String> res = v8::String::New(switcher_container[0]->get_property(std::string(*element_name), std::string(*property_name)).c_str());
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_property(std::string(*element_name), 
+							std::string(*property_name)).c_str());
   return scope.Close(res);
 }
 
+v8::Handle<v8::Value> GetPropertiesDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
 
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_properties_description(std::string(*element_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetPropertyDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue property_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_property_description(std::string(*element_name), 
+								    std::string(*property_name)).c_str());
+  return scope.Close(res);
+}
 
 // ----------- methods
 v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
@@ -144,6 +184,42 @@ v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+v8::Handle<v8::Value> GetMethodsDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_methods_description(std::string(*element_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetMethodDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue method_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_method_description(std::string(*element_name), 
+								  std::string(*method_name)).c_str());
+  return scope.Close(res);
+}
+
 
 
 
@@ -159,19 +235,29 @@ void Init(v8::Handle<v8::Object> target) {
   arg.push_back ("pipeline0");
   switcher_manager->auto_invoke ("set_runtime",arg);
 
-  //mapping methods
+  //life manager
   target->Set(v8::String::NewSymbol("create"),
 	      v8::FunctionTemplate::New(Create)->GetFunction());  
   target->Set(v8::String::NewSymbol("remove"),
 	      v8::FunctionTemplate::New(Remove)->GetFunction());  
-  target->Set(v8::String::NewSymbol("set"),
-	      v8::FunctionTemplate::New(SetProperty)->GetFunction());  
-  target->Set(v8::String::NewSymbol("get"),
-	      v8::FunctionTemplate::New(GetProperty)->GetFunction());  
-  target->Set(v8::String::NewSymbol("invoke"),
-	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   target->Set(v8::String::NewSymbol("close"),
 	      v8::FunctionTemplate::New(SwitcherClose)->GetFunction());  
+  //properties
+  target->Set(v8::String::NewSymbol("get_properties_description"),
+	      v8::FunctionTemplate::New(GetPropertiesDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_property_description"),
+	      v8::FunctionTemplate::New(GetPropertyDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("set_property_value"),
+	      v8::FunctionTemplate::New(SetProperty)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_property_value"),
+	      v8::FunctionTemplate::New(GetProperty)->GetFunction());  
+  //methods
+  target->Set(v8::String::NewSymbol("get_methods_description"),
+	      v8::FunctionTemplate::New(GetMethodsDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_method_description"),
+	      v8::FunctionTemplate::New(GetMethodDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("invoke"),
+	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   
 }
 

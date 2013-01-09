@@ -32,23 +32,43 @@ process.on('SIGINT', function () {
 
 
 //creation without a name
-console.log('unamed create returned:', 
+console.log('---- unamed create returned:', 
 	     switcher_addon.create("audiotestsrc") );
 //creation with a name
-console.log('named create returned:', 
+console.log('---- named create returned:', 
 	     switcher_addon.create("audiotestsrc","myaudiotest"));
 
-console.log('get myaudiotest property returned:', 
-	    switcher_addon.get("myaudiotest", "audiotestsrc/freq"));
+console.log('---- get myaudiotest property returned:', 
+	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
 
-console.log('set myaudiotest property to 111 returned:', 
-	    switcher_addon.set("myaudiotest", "audiotestsrc/freq", "111"));
+console.log('---- set myaudiotest property to 111 returned:', 
+	    switcher_addon.set_property_value("myaudiotest", "audiotestsrc/freq", "111"));
 
-console.log('get myaudiotest property returned:', 
-	    switcher_addon.get("myaudiotest", "audiotestsrc/freq"));
+console.log('---- get myaudiotest property returned:', 
+	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
+
+console.log('---- get property description returned:', 
+	    switcher_addon.get_property_description("myaudiotest", "audiotestsrc/freq"));
+
+console.log('---- get properties description returned:', 
+	    switcher_addon.get_properties_description("myaudiotest"));
 
 //remove "myaudiotest
-console.log('remove myaudiotest returned:', 
+console.log('---- remove myaudiotest returned:', 
 	    switcher_addon.remove("myaudiotest"));
 
+
+//creation with a name
+console.log('---- named create returned:', 
+	     switcher_addon.create("rtpsession","rtptest"));
+
+console.log('---- get method description returned:', 
+	    switcher_addon.get_method_description("rtptest", "add_destination"));
+
+console.log('---- get methods description returned:', 
+	    switcher_addon.get_methods_description("rtptest"));
+
+//remove "myaudiotest
+console.log('---- remove rtptest returned:', 
+	    switcher_addon.remove("rtptest"));
 
