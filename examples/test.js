@@ -30,45 +30,68 @@ process.on('SIGINT', function () {
     process.exit(0);
 });
 
+//classes info (json)
+console.log('------------- classes info ---------------');
+console.log(switcher_addon.get_classes_doc () );
+console.log('------------- end classes info------------');
+
+//audiotestsrc introspection (json)
+console.log('------------- audiotestsrc class ---------------');
+console.log('\n\n** class doc:\n', 
+	    switcher_addon.get_class_doc ("audiotestsrc") );
+console.log('\n\n** prop doc:\n', 
+	    switcher_addon.get_properties_description_by_class ("audiotestsrc") );
+console.log('\n\n** prop \"audiotestsrc/freq\" doc:\n', 
+	    switcher_addon.get_property_description_by_class ("audiotestsrc",
+							      "audiotestsrc/freq") );
+console.log('\n\n** rtpsession methods description:\n', 
+	    switcher_addon.get_methods_description_by_class("rtpsession"));
+console.log('\n\n** rtpsession method description:\n', 
+	    switcher_addon.get_method_description_by_class("rtpsession", "add_destination"));
+console.log('------------- end audiotestsrc class info-------');
+
 
 //creation without a name
-console.log('---- unamed create returned:', 
+console.log('\n\n---- unamed create returned:', 
 	     switcher_addon.create("audiotestsrc") );
 //creation with a name
-console.log('---- named create returned:', 
+console.log('\n\n---- named create returned:', 
 	     switcher_addon.create("audiotestsrc","myaudiotest"));
 
-console.log('---- get myaudiotest property returned:', 
+console.log('\n\n---- get myaudiotest property returned:', 
 	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
 
-console.log('---- set myaudiotest property to 111 returned:', 
+console.log('\n\n---- set myaudiotest property to 111 returned:', 
 	    switcher_addon.set_property_value("myaudiotest", "audiotestsrc/freq", "111"));
 
-console.log('---- get myaudiotest property returned:', 
+console.log('\n\n---- get myaudiotest property returned:', 
 	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
 
-console.log('---- get property description returned:', 
+console.log('\n\n---- get property description returned:', 
 	    switcher_addon.get_property_description("myaudiotest", "audiotestsrc/freq"));
 
-console.log('---- get properties description returned:', 
+console.log('\n\n---- get properties description returned:', 
 	    switcher_addon.get_properties_description("myaudiotest"));
 
 //remove "myaudiotest
-console.log('---- remove myaudiotest returned:', 
+console.log('\n\n---- remove myaudiotest returned:', 
 	    switcher_addon.remove("myaudiotest"));
 
-
 //creation with a name
-console.log('---- named create returned:', 
+console.log('\n\n---- named create returned:', 
 	     switcher_addon.create("rtpsession","rtptest"));
 
-console.log('---- get method description returned:', 
+console.log('\n\n---- get method description returned:', 
 	    switcher_addon.get_method_description("rtptest", "add_destination"));
 
-console.log('---- get methods description returned:', 
+console.log('\n\n---- get methods description returned:', 
 	    switcher_addon.get_methods_description("rtptest"));
 
+//print existing quiddities
+console.log('\n\n---- get quiddities description:', 
+	    switcher_addon.get_quiddities_description());
+
 //remove "myaudiotest
-console.log('---- remove rtptest returned:', 
+console.log('\n\n---- remove rtptest returned:', 
 	    switcher_addon.remove("rtptest"));
 

@@ -79,6 +79,41 @@ v8::Handle<v8::Value> SwitcherClose(const v8::Arguments& args) {
   return scope.Close(name);
 }
 
+v8::Handle<v8::Value> GetClassesDoc(const v8::Arguments& args) {
+  v8::HandleScope scope;
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_classes_doc().c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetClassDoc(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_class_doc(std::string(*class_name)).c_str() );
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetQuidditiesDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_quiddities_description().c_str());
+  return scope.Close(res);
+}
+
+//end life manager
+
 // ----------- properties
 v8::Handle<v8::Value> SetProperty(const v8::Arguments& args) {
   v8::HandleScope scope;
@@ -156,6 +191,43 @@ v8::Handle<v8::Value> GetPropertyDescription(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+v8::Handle<v8::Value> GetPropertiesDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_properties_description_by_class(std::string(*class_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetPropertyDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+  v8::String::AsciiValue property_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_property_description_by_class(std::string(*class_name), 
+									     std::string(*property_name)).c_str());
+  return scope.Close(res);
+}
+//end properties
+
 // ----------- methods
 v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
   v8::HandleScope scope;
@@ -220,6 +292,42 @@ v8::Handle<v8::Value> GetMethodDescription(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+v8::Handle<v8::Value> GetMethodsDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_methods_description_by_class(std::string(*class_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetMethodDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+  v8::String::AsciiValue method_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_method_description_by_class(std::string(*class_name), 
+									   std::string(*method_name)).c_str());
+  return scope.Close(res);
+}
+
 
 
 
@@ -242,11 +350,22 @@ void Init(v8::Handle<v8::Object> target) {
 	      v8::FunctionTemplate::New(Remove)->GetFunction());  
   target->Set(v8::String::NewSymbol("close"),
 	      v8::FunctionTemplate::New(SwitcherClose)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_classes_doc"),
+	      v8::FunctionTemplate::New(GetClassesDoc)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_class_doc"),
+	      v8::FunctionTemplate::New(GetClassDoc)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_quiddities_description"),
+	      v8::FunctionTemplate::New(GetQuidditiesDescription)->GetFunction());  
+
   //properties
   target->Set(v8::String::NewSymbol("get_properties_description"),
 	      v8::FunctionTemplate::New(GetPropertiesDescription)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_property_description"),
 	      v8::FunctionTemplate::New(GetPropertyDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_properties_description_by_class"),
+	      v8::FunctionTemplate::New(GetPropertiesDescriptionByClass)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_property_description_by_class"),
+	      v8::FunctionTemplate::New(GetPropertyDescriptionByClass)->GetFunction());  
   target->Set(v8::String::NewSymbol("set_property_value"),
 	      v8::FunctionTemplate::New(SetProperty)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_property_value"),
@@ -256,6 +375,10 @@ void Init(v8::Handle<v8::Object> target) {
 	      v8::FunctionTemplate::New(GetMethodsDescription)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_method_description"),
 	      v8::FunctionTemplate::New(GetMethodDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_methods_description_by_class"),
+	      v8::FunctionTemplate::New(GetMethodsDescriptionByClass)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_method_description_by_class"),
+	      v8::FunctionTemplate::New(GetMethodDescriptionByClass)->GetFunction());  
   target->Set(v8::String::NewSymbol("invoke"),
 	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   
