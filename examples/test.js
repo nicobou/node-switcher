@@ -43,7 +43,7 @@ console.log('\n\n** prop doc:\n',
 	    switcher_addon.get_properties_description_by_class ("audiotestsrc") );
 console.log('\n\n** prop \"audiotestsrc/freq\" doc:\n', 
 	    switcher_addon.get_property_description_by_class ("audiotestsrc",
-							      "audiotestsrc/freq") );
+							      "freq") );
 console.log('\n\n** rtpsession methods description:\n', 
 	    switcher_addon.get_methods_description_by_class("rtpsession"));
 console.log('\n\n** rtpsession method description:\n', 
@@ -59,19 +59,24 @@ console.log('\n\n---- named create returned:',
 	     switcher_addon.create("audiotestsrc","myaudiotest"));
 
 console.log('\n\n---- get myaudiotest property returned:', 
-	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
+	    switcher_addon.get_property_value("myaudiotest", "freq"));
 
 console.log('\n\n---- set myaudiotest property to 111 returned:', 
-	    switcher_addon.set_property_value("myaudiotest", "audiotestsrc/freq", "111"));
+	    switcher_addon.set_property_value("myaudiotest", "freq", "111"));
 
 console.log('\n\n---- get myaudiotest property returned:', 
-	    switcher_addon.get_property_value("myaudiotest", "audiotestsrc/freq"));
+	    switcher_addon.get_property_value("myaudiotest", "freq"));
 
 console.log('\n\n---- get property description returned:', 
-	    switcher_addon.get_property_description("myaudiotest", "audiotestsrc/freq"));
+	    switcher_addon.get_property_description("myaudiotest", "freq"));
 
 console.log('\n\n---- get properties description returned:', 
 	    switcher_addon.get_properties_description("myaudiotest"));
+
+console.log('\n\n---- get quiddity description returned:', 
+	    switcher_addon.get_quiddity_description("myaudiotest"));
+
+
 
 //remove "myaudiotest
 console.log('\n\n---- remove myaudiotest returned:', 

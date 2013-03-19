@@ -104,6 +104,23 @@ v8::Handle<v8::Value> GetClassDoc(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+v8::Handle<v8::Value> GetQuiddityDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue quiddity_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_quiddity_description(std::string(*quiddity_name)).c_str() );
+  return scope.Close(res);
+}
+
 v8::Handle<v8::Value> GetQuidditiesDescription(const v8::Arguments& args) {
   v8::HandleScope scope;
 
@@ -354,6 +371,8 @@ void Init(v8::Handle<v8::Object> target) {
 	      v8::FunctionTemplate::New(GetClassesDoc)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_class_doc"),
 	      v8::FunctionTemplate::New(GetClassDoc)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_quiddity_description"),
+   	      v8::FunctionTemplate::New(GetQuiddityDescription)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_quiddities_description"),
 	      v8::FunctionTemplate::New(GetQuidditiesDescription)->GetFunction());  
 
