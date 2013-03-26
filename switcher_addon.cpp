@@ -19,10 +19,18 @@
 
 //#define BUILDING_NODE_EXTENSION
 #include <node.h>
-
+#include <v8.h>
+#include <uv.h>
 #include <switcher/quiddity-manager.h>
 
 static std::vector<switcher::QuiddityManager::ptr> switcher_container;
+static v8::Persistent<v8::Function> user_log_cb; //must be disposed
+
+
+struct async_req {
+  uv_work_t req;
+  std::string msg;
+};
 
 
 // ----------- life management
@@ -73,6 +81,7 @@ v8::Handle<v8::Value> Create(const v8::Arguments& args) {
 
 v8::Handle<v8::Value> SwitcherClose(const v8::Arguments& args) {
   v8::HandleScope scope;
+  user_log_cb.Dispose ();
   //removing reference to manager in order to delete it
   switcher_container.clear ();
   v8::Local<v8::String> name = v8::String::New("closed");
@@ -345,6 +354,46 @@ v8::Handle<v8::Value> GetMethodDescriptionByClass(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+// log callback
+v8::Handle<v8::Value> RegisterLogCallback(const v8::Arguments& args) {
+  
+  v8::HandleScope scope;
+  user_log_cb = v8::Persistent<v8::Function>::New(v8::Local<v8::Function>::Cast(args[0]));
+    const unsigned argc = 1;
+    v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New("hello world")) };
+    user_log_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  
+  return scope.Close(v8::Undefined());
+}
+
+
+void DoNothingAsync (uv_work_t *r) {
+}
+
+void NotifyLog (uv_work_t *r) {
+  v8::HandleScope scope;
+  async_req *req = reinterpret_cast<async_req *>(r->data);
+  v8::TryCatch try_catch;
+  v8::Local<v8::Value> argv[] = { v8::Local<v8::Value>::New(v8::String::New(req->msg.c_str ())) };
+  user_log_cb->Call(user_log_cb, 1, argv);
+  delete req;
+  if (try_catch.HasCaught()) {
+    node::FatalException(try_catch);
+  }
+}
+
+//call client log callback
+static void 
+logger_cb (std::string quiddity_name, std::string property_name, std::string value, void *user_data)
+{
+    async_req *req = new async_req;
+    req->req.data = req;
+    req->msg = value;
+    uv_queue_work (uv_default_loop(),
+		   &req->req,
+		   DoNothingAsync,
+		   (uv_after_work_cb)NotifyLog);
+}
 
 
 
@@ -353,12 +402,25 @@ void Init(v8::Handle<v8::Object> target) {
 
   switcher::QuiddityManager::ptr switcher_manager 
     = switcher::QuiddityManager::make_manager ("nodeserver");  
+  
+   switcher_manager->create ("logger", "internal_logger");
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "shmdata", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "GStreamer", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "Glib", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "Glib-GObject", NULL);
+   switcher_manager->set_property ("internal_logger", "mute", "false");
+   switcher_manager->set_property ("internal_logger", "debug", "true");
+   switcher_manager->set_property ("internal_logger", "verbose", "true");
+   switcher_manager->make_subscriber ("log_sub", logger_cb, NULL);
+   switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
+  
   switcher_manager->create ("runtime");
   switcher_container.push_back (switcher_manager); // keep reference only in the container
   //setting auto_invoke for attaching to gst pipeline "pipeline0"
   std::vector<std::string> arg;
   arg.push_back ("pipeline0");
   switcher_manager->auto_invoke ("set_runtime",arg);
+
 
   //life manager
   target->Set(v8::String::NewSymbol("create"),
@@ -401,6 +463,9 @@ void Init(v8::Handle<v8::Object> target) {
   target->Set(v8::String::NewSymbol("invoke"),
 	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   
+  //calback
+   target->Set(v8::String::NewSymbol("register_log_callback"),
+    	      v8::FunctionTemplate::New(RegisterLogCallback)->GetFunction());
 }
 
 NODE_MODULE(switcher_addon, Init)
