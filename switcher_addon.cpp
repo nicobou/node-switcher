@@ -17,7 +17,6 @@
  * along with node-switcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#define BUILDING_NODE_EXTENSION
 #include <node.h>
 #include <v8.h>
 #include <uv.h>
@@ -81,7 +80,8 @@ v8::Handle<v8::Value> Create(const v8::Arguments& args) {
 
 v8::Handle<v8::Value> SwitcherClose(const v8::Arguments& args) {
   v8::HandleScope scope;
-  user_log_cb.Dispose ();
+  // if (!user_log_cb.IsEmpty ())
+  //  user_log_cb.Dispose ();
   //removing reference to manager in order to delete it
   switcher_container.clear ();
   v8::Local<v8::String> name = v8::String::New("closed");
@@ -375,7 +375,9 @@ void NotifyLog (uv_work_t *r) {
   async_req *req = reinterpret_cast<async_req *>(r->data);
   v8::TryCatch try_catch;
   v8::Local<v8::Value> argv[] = { v8::Local<v8::Value>::New(v8::String::New(req->msg.c_str ())) };
-  user_log_cb->Call(user_log_cb, 1, argv);
+  if (!user_log_cb.IsEmpty ())
+    if (user_log_cb->IsCallable ())
+      user_log_cb->Call(user_log_cb, 1, argv);
   delete req;
   if (try_catch.HasCaught()) {
     node::FatalException(try_catch);

@@ -30,9 +30,9 @@ process.on('SIGINT', function () {
     process.exit(0);
 });
 
- switcher_addon.register_log_callback(function (msg){
-      console.log('.....log message: ', msg);
- });
+switcher_addon.register_log_callback(function (msg){
+    console.log('.....log message: ', msg);
+});
 
  //classes info (json)
  console.log('------------- classes info ---------------');
