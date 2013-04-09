@@ -24,12 +24,21 @@
 
 static std::vector<switcher::QuiddityManager::ptr> switcher_container;
 static v8::Persistent<v8::Function> user_log_cb; //must be disposed
+static v8::Persistent<v8::Function> user_prop_cb; //must be disposed
 
 
-struct async_req {
+struct async_req_log {
   uv_work_t req;
   std::string msg;
 };
+
+struct async_req_prop {
+  uv_work_t req;
+  std::string quiddity_name;
+  std::string property_name;
+  std::string value;
+};
+
 
 
 // ----------- life management
@@ -359,9 +368,9 @@ v8::Handle<v8::Value> RegisterLogCallback(const v8::Arguments& args) {
   
   v8::HandleScope scope;
   user_log_cb = v8::Persistent<v8::Function>::New(v8::Local<v8::Function>::Cast(args[0]));
-    const unsigned argc = 1;
-    v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New("hello world")) };
-    user_log_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+    // const unsigned argc = 1;
+    // v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New("hello world")) };
+    // user_log_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
   
   return scope.Close(v8::Undefined());
 }
@@ -372,7 +381,7 @@ void DoNothingAsync (uv_work_t *r) {
 
 void NotifyLog (uv_work_t *r) {
   v8::HandleScope scope;
-  async_req *req = reinterpret_cast<async_req *>(r->data);
+  async_req_log *req = reinterpret_cast<async_req_log *>(r->data);
   v8::TryCatch try_catch;
   v8::Local<v8::Value> argv[] = { v8::Local<v8::Value>::New(v8::String::New(req->msg.c_str ())) };
   if (!user_log_cb.IsEmpty ())
@@ -384,11 +393,12 @@ void NotifyLog (uv_work_t *r) {
   }
 }
 
+
 //call client log callback
 static void 
 logger_cb (std::string quiddity_name, std::string property_name, std::string value, void *user_data)
 {
-    async_req *req = new async_req;
+  async_req_log *req = new async_req_log ();
     req->req.data = req;
     req->msg = value;
     uv_queue_work (uv_default_loop(),
@@ -397,6 +407,100 @@ logger_cb (std::string quiddity_name, std::string property_name, std::string val
 		   (uv_after_work_cb)NotifyLog);
 }
 
+
+// prop callback
+v8::Handle<v8::Value> RegisterPropCallback(const v8::Arguments& args) {
+  
+  v8::HandleScope scope;
+  user_prop_cb = v8::Persistent<v8::Function>::New(v8::Local<v8::Function>::Cast(args[0]));
+  // const unsigned argc = 3;
+  // v8::Local<v8::Value> argv[argc];
+  // argv [0] = { v8::Local<v8::Value>::New(v8::String::New("hw1")) };
+  // argv [1] = { v8::Local<v8::Value>::New(v8::String::New("hw2")) };
+  // argv [2] = { v8::Local<v8::Value>::New(v8::String::New("hw3")) };
+  // user_prop_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  return scope.Close(v8::Undefined());
+}
+
+void NotifyProp (uv_work_t *r) {
+  v8::HandleScope scope;
+  async_req_prop *req = reinterpret_cast<async_req_prop *>(r->data);
+  v8::TryCatch try_catch;
+  v8::Local<v8::Value> argv[3];
+  argv[0] = { v8::Local<v8::Value>::New(v8::String::New(req->quiddity_name.c_str ())) };
+  argv[1] = { v8::Local<v8::Value>::New(v8::String::New(req->property_name.c_str ())) };
+  argv[2] = { v8::Local<v8::Value>::New(v8::String::New(req->value.c_str ())) };
+  if (!user_prop_cb.IsEmpty ())
+    if (user_prop_cb->IsCallable ())
+      user_prop_cb->Call(user_prop_cb, 3, argv);
+  delete req;
+  if (try_catch.HasCaught()) {
+    node::FatalException(try_catch);
+  }
+}
+
+//call client prop callback
+static void 
+property_cb (std::string quiddity_name, std::string property_name, std::string value, void *user_data)
+{
+  async_req_prop *req = new async_req_prop ();
+  req->req.data = req;
+  req->quiddity_name = quiddity_name;
+  req->property_name = property_name;
+  req->value = value;
+  uv_queue_work (uv_default_loop(),
+		 &req->req,
+		 DoNothingAsync,
+		 (uv_after_work_cb)NotifyProp);
+}
+
+v8::Handle<v8::Value> SubscribeToProperty(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue property_name(args[1]->ToString());
+
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->subscribe_property (std::string ("prop_sub"),
+								std::string(*element_name), 
+								std::string(*property_name)));
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> UnsubscribeToProperty(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue property_name(args[1]->ToString());
+
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->unsubscribe_property (std::string ("prop_sub"),
+								  std::string(*element_name), 
+								  std::string(*property_name)));
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> ListSubscribedProperties(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->list_subscribed_properties_json ("prop_sub").c_str ());
+  return scope.Close(res);
+}
 
 
 // ------------ node init functions -------------------------------
@@ -415,14 +519,17 @@ void Init(v8::Handle<v8::Object> target) {
    switcher_manager->set_property ("internal_logger", "verbose", "true");
    switcher_manager->make_subscriber ("log_sub", logger_cb, NULL);
    switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
-  
-  switcher_manager->create ("runtime");
-  switcher_container.push_back (switcher_manager); // keep reference only in the container
-  //setting auto_invoke for attaching to gst pipeline "pipeline0"
-  std::vector<std::string> arg;
-  arg.push_back ("pipeline0");
-  switcher_manager->auto_invoke ("set_runtime",arg);
+   
+   switcher_manager->make_subscriber ("prop_sub", property_cb, NULL);
+   //switcher_manager->subscribe_property ("prop_sub","internal_logger","last-line");
 
+   switcher_manager->create ("runtime");
+   switcher_container.push_back (switcher_manager); // keep reference only in the container
+   //setting auto_invoke for attaching to gst pipeline "pipeline0"
+   std::vector<std::string> arg;
+   arg.push_back ("pipeline0");
+   switcher_manager->auto_invoke ("set_runtime",arg);
+   
 
   //life manager
   target->Set(v8::String::NewSymbol("create"),
@@ -465,9 +572,20 @@ void Init(v8::Handle<v8::Object> target) {
   target->Set(v8::String::NewSymbol("invoke"),
 	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   
-  //calback
+  //log
    target->Set(v8::String::NewSymbol("register_log_callback"),
     	      v8::FunctionTemplate::New(RegisterLogCallback)->GetFunction());
+
+   //property subscription
+   target->Set(v8::String::NewSymbol("register_prop_callback"),
+    	      v8::FunctionTemplate::New(RegisterPropCallback)->GetFunction());
+   target->Set(v8::String::NewSymbol("subscribe_to_property"),
+	       v8::FunctionTemplate::New(SubscribeToProperty)->GetFunction());   
+   target->Set(v8::String::NewSymbol("unsubscribe_to_property"),
+	       v8::FunctionTemplate::New(UnsubscribeToProperty)->GetFunction());  
+   target->Set(v8::String::NewSymbol("list_subscribed_properties"),
+	       v8::FunctionTemplate::New(ListSubscribedProperties)->GetFunction());  
+   
 }
 
 NODE_MODULE(switcher_addon, Init)
