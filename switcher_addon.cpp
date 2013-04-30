@@ -396,7 +396,11 @@ void NotifyLog (uv_work_t *r) {
 
 //call client log callback
 static void 
-logger_cb (std::string quiddity_name, std::string property_name, std::string value, void *user_data)
+logger_cb (std::string subscriber_name,
+	   std::string quiddity_name, 
+	   std::string property_name, 
+	   std::string value, 
+	   void *user_data)
 {
   async_req_log *req = new async_req_log ();
     req->req.data = req;
@@ -441,7 +445,11 @@ void NotifyProp (uv_work_t *r) {
 
 //call client prop callback
 static void 
-property_cb (std::string quiddity_name, std::string property_name, std::string value, void *user_data)
+property_cb (std::string subscriber_name,
+	     std::string quiddity_name, 
+	     std::string property_name, 
+	     std::string value, 
+	     void *user_data)
 {
   async_req_prop *req = new async_req_prop ();
   req->req.data = req;
