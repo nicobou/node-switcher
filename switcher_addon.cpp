@@ -525,10 +525,10 @@ void Init(v8::Handle<v8::Object> target) {
    switcher_manager->set_property ("internal_logger", "mute", "false");
    switcher_manager->set_property ("internal_logger", "debug", "true");
    switcher_manager->set_property ("internal_logger", "verbose", "true");
-   switcher_manager->make_subscriber ("log_sub", logger_cb, NULL);
+   switcher_manager->make_property_subscriber ("log_sub", logger_cb, NULL);
    switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
    
-   switcher_manager->make_subscriber ("prop_sub", property_cb, NULL);
+   switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
    //switcher_manager->subscribe_property ("prop_sub","internal_logger","last-line");
 
    switcher_manager->create ("runtime");
