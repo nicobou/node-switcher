@@ -25,6 +25,7 @@
 static std::vector<switcher::QuiddityManager::ptr> switcher_container;
 static v8::Persistent<v8::Function> user_log_cb; //must be disposed
 static v8::Persistent<v8::Function> user_prop_cb; //must be disposed
+static v8::Persistent<v8::Function> user_signal_cb; //must be disposed
 
 
 struct async_req_log {
@@ -37,6 +38,13 @@ struct async_req_prop {
   std::string quiddity_name;
   std::string property_name;
   std::string value;
+};
+
+struct async_req_signal {
+  uv_work_t req;
+  std::string quiddity_name;
+  std::string signal_name;
+  std::vector<std::string> params;
 };
 
 
@@ -510,6 +518,189 @@ v8::Handle<v8::Value> ListSubscribedProperties(const v8::Arguments& args) {
   return scope.Close(res);
 }
 
+// signal callback
+v8::Handle<v8::Value> RegisterSignalCallback(const v8::Arguments& args) {
+  
+  v8::HandleScope scope;
+  user_signal_cb = v8::Persistent<v8::Function>::New(v8::Local<v8::Function>::Cast(args[0]));
+  // const unsigned argc = 3;
+  // v8::Local<v8::Value> argv[argc];
+  // argv [0] = { v8::Local<v8::Value>::New(v8::String::New("hw1")) };
+  // argv [1] = { v8::Local<v8::Value>::New(v8::String::New("hw2")) };
+  // argv [2] = { v8::Local<v8::Value>::New(v8::String::New("hw3")) };
+  // user_prop_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  return scope.Close(v8::Undefined());
+}
+
+void NotifySignal (uv_work_t *r) {
+  v8::HandleScope scope;
+  async_req_signal *req = reinterpret_cast<async_req_signal *>(r->data);
+  v8::TryCatch try_catch;
+  v8::Local<v8::Value> argv[3];
+  // Create a new empty array.
+  v8::Local<v8::Array> array = v8::Array::New(req->params.size ());
+// // Return an empty result if there was an error creating the array.
+//   if (array.IsEmpty())
+//     return Handle<Array>();
+  std::vector <std::string>::iterator it;
+  for (it = req->params.begin (); it != req->params.end (); it++)
+    array->Set(0, v8::String::New(it->c_str ()));
+
+  argv[0] = { v8::Local<v8::Value>::New(v8::String::New(req->quiddity_name.c_str ())) };
+  argv[1] = { v8::Local<v8::Value>::New(v8::String::New(req->signal_name.c_str ())) };
+  argv[2] = { v8::Local<v8::Value>::New(array)};
+  
+  
+  if (!user_signal_cb.IsEmpty ())
+    if (user_signal_cb->IsCallable ())
+      user_signal_cb->Call(user_signal_cb, 3, argv);
+  delete req;
+  if (try_catch.HasCaught()) {
+    node::FatalException(try_catch);
+  }
+}
+
+//call client signal callback
+static void 
+signal_cb (std::string subscriber_name,
+	   std::string quiddity_name, 
+	   std::string signal_name, 
+	   std::vector<std::string> params, 
+	   void *user_data)
+{
+  async_req_signal *req = new async_req_signal ();
+  req->req.data = req;
+  req->quiddity_name = quiddity_name;
+  req->signal_name = signal_name;
+  req->params = params;
+  uv_queue_work (uv_default_loop(),
+		 &req->req,
+		 DoNothingAsync,
+		 (uv_after_work_cb)NotifySignal);
+}
+
+v8::Handle<v8::Value> SubscribeToSignal(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue signal_name(args[1]->ToString());
+
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->subscribe_signal (std::string ("signal_sub"),
+							      std::string(*element_name), 
+							      std::string(*signal_name)));
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> UnsubscribeToSignal(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue signal_name(args[1]->ToString());
+
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->unsubscribe_signal (std::string ("signal_sub"),
+								std::string(*element_name), 
+								std::string(*signal_name)));
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> ListSubscribedSignals(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->list_subscribed_signals_json ("signal_sub").c_str ());
+  return scope.Close(res);
+}
+
+
+// signal description
+v8::Handle<v8::Value> GetSignalsDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_signals_description(std::string(*element_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetSignalDescription(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue element_name(args[0]->ToString());
+  v8::String::AsciiValue signal_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_signal_description(std::string(*element_name), 
+								  std::string(*signal_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetSignalsDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_signals_description_by_class(std::string(*class_name)).c_str());
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> GetSignalDescriptionByClass(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() || !args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue class_name(args[0]->ToString());
+  v8::String::AsciiValue signal_name(args[1]->ToString());
+
+  v8::Handle<v8::String> res = 
+    v8::String::New(switcher_container[0]->get_signal_description_by_class(std::string(*class_name), 
+									   std::string(*signal_name)).c_str());
+  return scope.Close(res);
+}
+
 
 // ------------ node init functions -------------------------------
 void Init(v8::Handle<v8::Object> target) {
@@ -525,10 +716,10 @@ void Init(v8::Handle<v8::Object> target) {
    switcher_manager->set_property ("internal_logger", "mute", "false");
    switcher_manager->set_property ("internal_logger", "debug", "true");
    switcher_manager->set_property ("internal_logger", "verbose", "true");
-   switcher_manager->make_subscriber ("log_sub", logger_cb, NULL);
+   switcher_manager->make_property_subscriber ("log_sub", logger_cb, NULL);
    switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
    
-   switcher_manager->make_subscriber ("prop_sub", property_cb, NULL);
+   switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
    //switcher_manager->subscribe_property ("prop_sub","internal_logger","last-line");
 
    switcher_manager->create ("runtime");
@@ -538,6 +729,10 @@ void Init(v8::Handle<v8::Object> target) {
    arg.push_back ("pipeline0");
    switcher_manager->auto_invoke ("set_runtime",arg);
    
+   switcher_manager->make_signal_subscriber ("signal_sub", signal_cb, NULL);
+   switcher_manager->create ("create_remove_spy", "create_remove_spy");
+   switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-created");
+   switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-removed");
 
   //life manager
   target->Set(v8::String::NewSymbol("create"),
@@ -594,6 +789,25 @@ void Init(v8::Handle<v8::Object> target) {
    target->Set(v8::String::NewSymbol("list_subscribed_properties"),
 	       v8::FunctionTemplate::New(ListSubscribedProperties)->GetFunction());  
    
+   //signals
+   target->Set(v8::String::NewSymbol("get_signals_description"),
+	       v8::FunctionTemplate::New(GetSignalsDescription)->GetFunction());  
+   target->Set(v8::String::NewSymbol("get_signal_description"),
+	       v8::FunctionTemplate::New(GetSignalDescription)->GetFunction());  
+   target->Set(v8::String::NewSymbol("get_signals_description_by_class"),
+	       v8::FunctionTemplate::New(GetSignalsDescriptionByClass)->GetFunction());  
+   target->Set(v8::String::NewSymbol("get_signal_description_by_class"),
+	       v8::FunctionTemplate::New(GetSignalDescriptionByClass)->GetFunction());  
+   
+   //signal subscription
+   target->Set(v8::String::NewSymbol("register_signal_callback"),
+    	      v8::FunctionTemplate::New(RegisterSignalCallback)->GetFunction());
+   target->Set(v8::String::NewSymbol("subscribe_to_signal"),
+	       v8::FunctionTemplate::New(SubscribeToSignal)->GetFunction());   
+   target->Set(v8::String::NewSymbol("unsubscribe_to_signal"),
+	       v8::FunctionTemplate::New(UnsubscribeToSignal)->GetFunction());  
+   target->Set(v8::String::NewSymbol("list_subscribed_signals"),
+	       v8::FunctionTemplate::New(ListSubscribedSignals)->GetFunction());  
 }
 
 NODE_MODULE(switcher_addon, Init)

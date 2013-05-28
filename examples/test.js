@@ -38,6 +38,22 @@ switcher_addon.register_prop_callback(function (qname, qprop, pvalue){
     console.log('...PROP...: ', qname, ' ', qprop, ' ', pvalue);
 });
 
+switcher_addon.register_signal_callback(function (qname, qprop, pvalue){
+    console.log('...SIGNAL...: ', qname, ' ', qprop, ' ', pvalue);
+});
+
+//signal info
+console.log ("------------ signals ------------");
+switcher_addon.create("audiotestsrc","sigsubtest");
+console.log (switcher_addon.get_signals_description ("sigsubtest"));
+console.log ("--");
+console.log (switcher_addon.get_signal_description ("sigsubtest", "on-new-shmdata-writer"));
+console.log ("--");
+console.log (switcher_addon.get_signals_description_by_class ("audiotestsrc"));
+console.log ("--");
+console.log (switcher_addon.get_signal_description_by_class ("audiotestsrc", "on-new-shmdata-writer"));
+console.log ("------------ fin signals ------------");
+
 
 switcher_addon.create("audiotestsrc","propsubtest");
 switcher_addon.subscribe_to_property ("propsubtest", "freq");
