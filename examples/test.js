@@ -135,4 +135,3 @@ switcher_addon.set_property_value("propsubtest", "freq", "333");
  //remove 
  console.log('\n\n---- remove rtptest returned:', 
   	    switcher_addon.remove("rtptest"));
-

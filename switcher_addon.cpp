@@ -48,6 +48,81 @@ struct async_req_signal {
 };
 
 
+//------------ history
+v8::Handle<v8::Value> SaveHistory(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue file_path(args[0]->ToString());
+
+  if (switcher_container[0]->save_command_history (std::string(*file_path).c_str ()))
+    {
+      v8::Handle<v8::String> res = v8::String::New("true");
+      return scope.Close(res);
+    }
+      v8::Handle<v8::String> res = v8::String::New("false");
+      return scope.Close(res);
+}
+
+v8::Handle<v8::Value> LoadHistoryFromCurrentState(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue file_path(args[0]->ToString());
+
+  switcher::QuiddityManager::CommandHistory histo = 
+    switcher_container[0]->get_command_history_from_file (std::string (*file_path).c_str ());
+  
+  if (histo.empty ())
+    {
+      v8::Handle<v8::String> res = v8::String::New("false");
+      return scope.Close(res);
+    }
+
+  switcher_container[0]->play_command_history (histo, NULL, NULL);
+  v8::Handle<v8::String> res = v8::String::New("true");
+  return scope.Close(res);
+}
+
+v8::Handle<v8::Value> LoadHistoryFromScratch(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 1) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue file_path(args[0]->ToString());
+
+  switcher::QuiddityManager::CommandHistory histo = 
+    switcher_container[0]->get_command_history_from_file (std::string (*file_path).c_str ());
+  
+  if (histo.empty ())
+    {
+      v8::Handle<v8::String> res = v8::String::New("false");
+      return scope.Close(res);
+    }
+
+  switcher_container[0]->reset_command_history(true);
+
+  switcher_container[0]->play_command_history (histo, NULL, NULL);
+  v8::Handle<v8::String> res = v8::String::New("true");
+  return scope.Close(res);
+}
 
 // ----------- life management
 v8::Handle<v8::Value> Remove(const v8::Arguments& args) {
@@ -560,6 +635,16 @@ void NotifySignal (uv_work_t *r) {
   }
 }
 
+gpointer
+set_runtime_invoker (gpointer name)
+{
+  if (switcher_container[0]->has_method ((char *)name, "set_runtime"))
+      switcher_container[0]->invoke_va ((char *)name, "set_runtime", "pipeline0", NULL);
+  g_free (name);
+  return NULL;
+}
+
+
 //call client signal callback
 static void 
 signal_cb (std::string subscriber_name,
@@ -568,6 +653,11 @@ signal_cb (std::string subscriber_name,
 	   std::vector<std::string> params, 
 	   void *user_data)
 {
+  g_thread_create (set_runtime_invoker, 
+		   g_strdup (params[0].c_str ()),
+		   FALSE,
+		   NULL);
+  
   async_req_signal *req = new async_req_signal ();
   req->req.data = req;
   req->quiddity_name = quiddity_name;
@@ -720,22 +810,30 @@ void Init(v8::Handle<v8::Object> target) {
    switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
    
    switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
-   //switcher_manager->subscribe_property ("prop_sub","internal_logger","last-line");
 
    switcher_manager->create ("runtime");
    switcher_container.push_back (switcher_manager); // keep reference only in the container
-   //setting auto_invoke for attaching to gst pipeline "pipeline0"
-   std::vector<std::string> arg;
-   arg.push_back ("pipeline0");
-   switcher_manager->auto_invoke ("set_runtime",arg);
    
    switcher_manager->make_signal_subscriber ("signal_sub", signal_cb, NULL);
    switcher_manager->create ("create_remove_spy", "create_remove_spy");
    switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-created");
    switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-removed");
+   
+   //do not play with previous config 
+   switcher_manager->reset_command_history (false);
 
-  //life manager
-  target->Set(v8::String::NewSymbol("create"),
+
+   //history
+   target->Set(v8::String::NewSymbol("save_history"),
+	       v8::FunctionTemplate::New(SaveHistory)->GetFunction());  
+   target->Set(v8::String::NewSymbol("load_history_from_current_state"),
+    	       v8::FunctionTemplate::New(LoadHistoryFromCurrentState)->GetFunction());  
+   target->Set(v8::String::NewSymbol("load_history_from_scratch"),
+    	       v8::FunctionTemplate::New(LoadHistoryFromScratch)->GetFunction());  
+   
+
+   //life manager
+   target->Set(v8::String::NewSymbol("create"),
 	      v8::FunctionTemplate::New(Create)->GetFunction());  
   target->Set(v8::String::NewSymbol("remove"),
 	      v8::FunctionTemplate::New(Remove)->GetFunction());  
