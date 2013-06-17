@@ -26,7 +26,7 @@ static std::vector<switcher::QuiddityManager::ptr> switcher_container;
 static v8::Persistent<v8::Function> user_log_cb; //must be disposed
 static v8::Persistent<v8::Function> user_prop_cb; //must be disposed
 static v8::Persistent<v8::Function> user_signal_cb; //must be disposed
-
+static bool switcher_is_loading = false;
 
 struct async_req_log {
   uv_work_t req;
@@ -82,6 +82,7 @@ v8::Handle<v8::Value> LoadHistoryFromCurrentState(const v8::Arguments& args) {
   }
   v8::String::AsciiValue file_path(args[0]->ToString());
 
+  switcher_is_loading = true;
   switcher::QuiddityManager::CommandHistory histo = 
     switcher_container[0]->get_command_history_from_file (std::string (*file_path).c_str ());
   
@@ -93,6 +94,8 @@ v8::Handle<v8::Value> LoadHistoryFromCurrentState(const v8::Arguments& args) {
 
   switcher_container[0]->play_command_history (histo, NULL, NULL);
   v8::Handle<v8::String> res = v8::String::New("true");
+
+  switcher_is_loading = false;
   return scope.Close(res);
 }
 
@@ -108,6 +111,8 @@ v8::Handle<v8::Value> LoadHistoryFromScratch(const v8::Arguments& args) {
   }
   v8::String::AsciiValue file_path(args[0]->ToString());
 
+  switcher_is_loading = true;
+
   switcher::QuiddityManager::CommandHistory histo = 
     switcher_container[0]->get_command_history_from_file (std::string (*file_path).c_str ());
   
@@ -121,6 +126,8 @@ v8::Handle<v8::Value> LoadHistoryFromScratch(const v8::Arguments& args) {
 
   switcher_container[0]->play_command_history (histo, NULL, NULL);
   v8::Handle<v8::String> res = v8::String::New("true");
+
+  switcher_is_loading = false;
   return scope.Close(res);
 }
 
@@ -653,10 +660,12 @@ signal_cb (std::string subscriber_name,
 	   std::vector<std::string> params, 
 	   void *user_data)
 {
-  g_thread_create (set_runtime_invoker, 
-		   g_strdup (params[0].c_str ()),
-		   FALSE,
-		   NULL);
+  if (g_strcmp0 (signal_name.c_str (), "on-quiddity-created") == 0
+      && switcher_is_loading == false)
+    g_thread_create (set_runtime_invoker, 
+		     g_strdup (params[0].c_str ()),
+		     FALSE,
+		     NULL);
   
   async_req_signal *req = new async_req_signal ();
   req->req.data = req;
