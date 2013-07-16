@@ -4,7 +4,7 @@
     {
       "target_name": "switcher_addon",
       "cflags": [ "-std=c++0x",
-                  "-I/usr/include/switcher-0.2",
+                  "-I/usr/local/include/switcher-0.2",
                   "-pthread", 
 		  "-I/usr/include/gstreamer-0.10", 
  		  "-I/usr/include/glib-2.0", 

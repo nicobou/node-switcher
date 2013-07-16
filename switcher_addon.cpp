@@ -92,7 +92,7 @@ v8::Handle<v8::Value> LoadHistoryFromCurrentState(const v8::Arguments& args) {
       return scope.Close(res);
     }
 
-  switcher_container[0]->play_command_history (histo, NULL, NULL);
+  switcher_container[0]->play_command_history (histo, NULL, NULL, true);
   v8::Handle<v8::String> res = v8::String::New("true");
 
   switcher_is_loading = false;
@@ -124,7 +124,7 @@ v8::Handle<v8::Value> LoadHistoryFromScratch(const v8::Arguments& args) {
 
   switcher_container[0]->reset_command_history(true);
 
-  switcher_container[0]->play_command_history (histo, NULL, NULL);
+  switcher_container[0]->play_command_history (histo, NULL, NULL, true);
   v8::Handle<v8::String> res = v8::String::New("true");
 
   switcher_is_loading = false;
