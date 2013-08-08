@@ -365,7 +365,7 @@ v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
   }
   v8::String::AsciiValue element_name(args[0]->ToString());
-  v8::String::AsciiValue function_name(args[1]->ToString());
+  v8::String::AsciiValue method_name(args[1]->ToString());
   v8::Local<v8::Object> obj_arguments = args[2]->ToObject();
   v8::Local<v8::Array> arguments = obj_arguments->GetPropertyNames();
 
@@ -374,10 +374,13 @@ v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
     v8::String::AsciiValue val(obj_arguments->Get(i)->ToString());
     vector_arg.push_back(std::string(*val));
     }
-  v8::Handle<v8::Boolean> res = 
-    v8::Boolean::New(switcher_container[0]->invoke(std::string(*element_name),
-						   std::string(*function_name),
-						   vector_arg));
+
+  std::string *return_value;
+  switcher_container[0]->invoke (std::string(*element_name),
+				 std::string(*method_name),
+				 &return_value,
+				 vector_arg);
+  v8::Handle<v8::String> res = v8::String::New((*return_value).c_str ());
   return scope.Close(res);
 }
 
@@ -646,7 +649,7 @@ gpointer
 set_runtime_invoker (gpointer name)
 {
   if (switcher_container[0]->has_method ((char *)name, "set_runtime"))
-      switcher_container[0]->invoke_va ((char *)name, "set_runtime", "pipeline0", NULL);
+    switcher_container[0]->invoke_va ((char *)name, "set_runtime", NULL, "pipeline0", NULL);
   g_free (name);
   return NULL;
 }
@@ -808,10 +811,10 @@ void Init(v8::Handle<v8::Object> target) {
     = switcher::QuiddityManager::make_manager ("nodeserver");  
   
    switcher_manager->create ("logger", "internal_logger");
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "shmdata", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "GStreamer", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "Glib", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", "Glib-GObject", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "shmdata", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GStreamer", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib", NULL);
+   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib-GObject", NULL);
    switcher_manager->set_property ("internal_logger", "mute", "false");
    switcher_manager->set_property ("internal_logger", "debug", "true");
    switcher_manager->set_property ("internal_logger", "verbose", "true");
