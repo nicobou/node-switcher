@@ -821,17 +821,25 @@ void Init(v8::Handle<v8::Object> target) {
    switcher_manager->make_property_subscriber ("log_sub", logger_cb, NULL);
    switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
    
-   switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
-
-   switcher_manager->create ("runtime");
-   switcher_container.push_back (switcher_manager); // keep reference only in the container
-   
-   switcher_manager->make_signal_subscriber ("signal_sub", signal_cb, NULL);
-   switcher_manager->create ("create_remove_spy", "create_remove_spy");
-   switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-created");
-   switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-removed");
-   
-   //do not play with previous config 
+   gchar *usr_plugin_dir = g_strdup_printf ("/usr/switcher-0.2/plugins");
+   switcher_manager->scan_directory_for_plugins (usr_plugin_dir);
+   g_free (usr_plugin_dir);
+  
+  gchar *usr_local_plugin_dir = g_strdup_printf ("/usr/local/switcher-0.2/plugins");
+  switcher_manager->scan_directory_for_plugins (usr_local_plugin_dir);
+  g_free (usr_local_plugin_dir);
+  
+  switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
+  
+  switcher_manager->create ("runtime");
+  switcher_container.push_back (switcher_manager); // keep reference only in the container
+  
+  switcher_manager->make_signal_subscriber ("signal_sub", signal_cb, NULL);
+  switcher_manager->create ("create_remove_spy", "create_remove_spy");
+  switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-created");
+  switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-removed");
+  
+  //do not play with previous config 
    switcher_manager->reset_command_history (false);
 
 

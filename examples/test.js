@@ -132,6 +132,11 @@ switcher_addon.set_property_value("propsubtest", "freq", "333");
  console.log('\n\n---- get quiddities description:', 
              switcher_addon.get_quiddities_description());
 
+//invoke
+console.log('\n\n---- invoke rtptest returned:', 
+  	    switcher_addon.invoke("rtptest", "add_destination", ["local","localhost"]));
+
  //remove 
  console.log('\n\n---- remove rtptest returned:', 
   	    switcher_addon.remove("rtptest"));
+
