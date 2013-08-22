@@ -66,8 +66,8 @@ v8::Handle<v8::Value> SaveHistory(const v8::Arguments& args) {
       v8::Handle<v8::String> res = v8::String::New("true");
       return scope.Close(res);
     }
-      v8::Handle<v8::String> res = v8::String::New("false");
-      return scope.Close(res);
+  v8::Handle<v8::String> res = v8::String::New("false");
+  return scope.Close(res);
 }
 
 v8::Handle<v8::Value> LoadHistoryFromCurrentState(const v8::Arguments& args) {
@@ -175,6 +175,33 @@ v8::Handle<v8::Value> Create(const v8::Arguments& args) {
     name = v8::String::New(switcher_container[0]->create(std::string(*first_arg)).c_str());
 
   return scope.Close(name);
+}
+
+v8::Handle<v8::Value> Rename(const v8::Arguments& args) {
+  v8::HandleScope scope;
+  if (args.Length() != 2) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
+    return scope.Close(v8::Undefined());
+  }
+  if (!args[0]->IsString() ) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong first arg type")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue first_arg(args[0]->ToString());
+
+  if (!args[1]->IsString()) {
+    ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong second arg type")));
+    return scope.Close(v8::Undefined());
+  }
+  v8::String::AsciiValue second_arg(args[1]->ToString());
+
+  v8::Local<v8::String> name;
+  
+  v8::Handle<v8::Boolean> res = 
+    v8::Boolean::New(switcher_container[0]->rename(std::string(*first_arg), 
+						   std::string(*second_arg)));
+
+  return scope.Close(res);
 }
 
 v8::Handle<v8::Value> SwitcherClose(const v8::Arguments& args) {
@@ -373,7 +400,7 @@ v8::Handle<v8::Value> Invoke(const v8::Arguments& args) {
   for(unsigned int i = 0; i < arguments->Length(); i++) {
     v8::String::AsciiValue val(obj_arguments->Get(i)->ToString());
     vector_arg.push_back(std::string(*val));
-    }
+  }
 
   std::string *return_value;
   switcher_container[0]->invoke (std::string(*element_name),
@@ -461,9 +488,9 @@ v8::Handle<v8::Value> RegisterLogCallback(const v8::Arguments& args) {
   
   v8::HandleScope scope;
   user_log_cb = v8::Persistent<v8::Function>::New(v8::Local<v8::Function>::Cast(args[0]));
-    // const unsigned argc = 1;
-    // v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New("hello world")) };
-    // user_log_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  // const unsigned argc = 1;
+  // v8::Local<v8::Value> argv[argc] = { v8::Local<v8::Value>::New(v8::String::New("hello world")) };
+  // user_log_cb->Call(v8::Context::GetCurrent()->Global(), argc, argv);
   
   return scope.Close(v8::Undefined());
 }
@@ -496,12 +523,12 @@ logger_cb (std::string subscriber_name,
 	   void *user_data)
 {
   async_req_log *req = new async_req_log ();
-    req->req.data = req;
-    req->msg = value;
-    uv_queue_work (uv_default_loop(),
-		   &req->req,
-		   DoNothingAsync,
-		   (uv_after_work_cb)NotifyLog);
+  req->req.data = req;
+  req->msg = value;
+  uv_queue_work (uv_default_loop(),
+		 &req->req,
+		 DoNothingAsync,
+		 (uv_after_work_cb)NotifyLog);
 }
 
 
@@ -624,9 +651,9 @@ void NotifySignal (uv_work_t *r) {
   v8::Local<v8::Value> argv[3];
   // Create a new empty array.
   v8::Local<v8::Array> array = v8::Array::New(req->params.size ());
-// // Return an empty result if there was an error creating the array.
-//   if (array.IsEmpty())
-//     return Handle<Array>();
+  // // Return an empty result if there was an error creating the array.
+  //   if (array.IsEmpty())
+  //     return Handle<Array>();
   std::vector <std::string>::iterator it;
   for (it = req->params.begin (); it != req->params.end (); it++)
     array->Set(0, v8::String::New(it->c_str ()));
@@ -810,20 +837,20 @@ void Init(v8::Handle<v8::Object> target) {
   switcher::QuiddityManager::ptr switcher_manager 
     = switcher::QuiddityManager::make_manager ("nodeserver");  
   
-   switcher_manager->create ("logger", "internal_logger");
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "shmdata", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GStreamer", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib", NULL);
-   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib-GObject", NULL);
-   switcher_manager->set_property ("internal_logger", "mute", "false");
-   switcher_manager->set_property ("internal_logger", "debug", "true");
-   switcher_manager->set_property ("internal_logger", "verbose", "true");
-   switcher_manager->make_property_subscriber ("log_sub", logger_cb, NULL);
-   switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
+  switcher_manager->create ("logger", "internal_logger");
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "shmdata", NULL);
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GStreamer", NULL);
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib", NULL);
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib-GObject", NULL);
+  switcher_manager->set_property ("internal_logger", "mute", "false");
+  switcher_manager->set_property ("internal_logger", "debug", "true");
+  switcher_manager->set_property ("internal_logger", "verbose", "true");
+  switcher_manager->make_property_subscriber ("log_sub", logger_cb, NULL);
+  switcher_manager->subscribe_property ("log_sub","internal_logger","last-line");
    
-   gchar *usr_plugin_dir = g_strdup_printf ("/usr/switcher-0.2/plugins");
-   switcher_manager->scan_directory_for_plugins (usr_plugin_dir);
-   g_free (usr_plugin_dir);
+  gchar *usr_plugin_dir = g_strdup_printf ("/usr/switcher-0.2/plugins");
+  switcher_manager->scan_directory_for_plugins (usr_plugin_dir);
+  g_free (usr_plugin_dir);
   
   gchar *usr_local_plugin_dir = g_strdup_printf ("/usr/local/switcher-0.2/plugins");
   switcher_manager->scan_directory_for_plugins (usr_local_plugin_dir);
@@ -840,21 +867,23 @@ void Init(v8::Handle<v8::Object> target) {
   switcher_manager->subscribe_signal ("signal_sub","create_remove_spy","on-quiddity-removed");
   
   //do not play with previous config 
-   switcher_manager->reset_command_history (false);
+  switcher_manager->reset_command_history (false);
 
 
-   //history
-   target->Set(v8::String::NewSymbol("save_history"),
-	       v8::FunctionTemplate::New(SaveHistory)->GetFunction());  
-   target->Set(v8::String::NewSymbol("load_history_from_current_state"),
-    	       v8::FunctionTemplate::New(LoadHistoryFromCurrentState)->GetFunction());  
-   target->Set(v8::String::NewSymbol("load_history_from_scratch"),
-    	       v8::FunctionTemplate::New(LoadHistoryFromScratch)->GetFunction());  
+  //history
+  target->Set(v8::String::NewSymbol("save_history"),
+	      v8::FunctionTemplate::New(SaveHistory)->GetFunction());  
+  target->Set(v8::String::NewSymbol("load_history_from_current_state"),
+	      v8::FunctionTemplate::New(LoadHistoryFromCurrentState)->GetFunction());  
+  target->Set(v8::String::NewSymbol("load_history_from_scratch"),
+	      v8::FunctionTemplate::New(LoadHistoryFromScratch)->GetFunction());  
    
 
-   //life manager
-   target->Set(v8::String::NewSymbol("create"),
+  //life manager
+  target->Set(v8::String::NewSymbol("create"),
 	      v8::FunctionTemplate::New(Create)->GetFunction());  
+  target->Set(v8::String::NewSymbol("rename"),
+	      v8::FunctionTemplate::New(Rename)->GetFunction());  
   target->Set(v8::String::NewSymbol("remove"),
 	      v8::FunctionTemplate::New(Remove)->GetFunction());  
   target->Set(v8::String::NewSymbol("close"),
@@ -864,7 +893,7 @@ void Init(v8::Handle<v8::Object> target) {
   target->Set(v8::String::NewSymbol("get_class_doc"),
 	      v8::FunctionTemplate::New(GetClassDoc)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_quiddity_description"),
-   	      v8::FunctionTemplate::New(GetQuiddityDescription)->GetFunction());  
+	      v8::FunctionTemplate::New(GetQuiddityDescription)->GetFunction());  
   target->Set(v8::String::NewSymbol("get_quiddities_description"),
 	      v8::FunctionTemplate::New(GetQuidditiesDescription)->GetFunction());  
 
@@ -894,38 +923,38 @@ void Init(v8::Handle<v8::Object> target) {
 	      v8::FunctionTemplate::New(Invoke)->GetFunction());  
   
   //log
-   target->Set(v8::String::NewSymbol("register_log_callback"),
+  target->Set(v8::String::NewSymbol("register_log_callback"),
     	      v8::FunctionTemplate::New(RegisterLogCallback)->GetFunction());
 
-   //property subscription
-   target->Set(v8::String::NewSymbol("register_prop_callback"),
+  //property subscription
+  target->Set(v8::String::NewSymbol("register_prop_callback"),
     	      v8::FunctionTemplate::New(RegisterPropCallback)->GetFunction());
-   target->Set(v8::String::NewSymbol("subscribe_to_property"),
-	       v8::FunctionTemplate::New(SubscribeToProperty)->GetFunction());   
-   target->Set(v8::String::NewSymbol("unsubscribe_to_property"),
-	       v8::FunctionTemplate::New(UnsubscribeToProperty)->GetFunction());  
-   target->Set(v8::String::NewSymbol("list_subscribed_properties"),
-	       v8::FunctionTemplate::New(ListSubscribedProperties)->GetFunction());  
+  target->Set(v8::String::NewSymbol("subscribe_to_property"),
+	      v8::FunctionTemplate::New(SubscribeToProperty)->GetFunction());   
+  target->Set(v8::String::NewSymbol("unsubscribe_to_property"),
+	      v8::FunctionTemplate::New(UnsubscribeToProperty)->GetFunction());  
+  target->Set(v8::String::NewSymbol("list_subscribed_properties"),
+	      v8::FunctionTemplate::New(ListSubscribedProperties)->GetFunction());  
    
-   //signals
-   target->Set(v8::String::NewSymbol("get_signals_description"),
-	       v8::FunctionTemplate::New(GetSignalsDescription)->GetFunction());  
-   target->Set(v8::String::NewSymbol("get_signal_description"),
-	       v8::FunctionTemplate::New(GetSignalDescription)->GetFunction());  
-   target->Set(v8::String::NewSymbol("get_signals_description_by_class"),
-	       v8::FunctionTemplate::New(GetSignalsDescriptionByClass)->GetFunction());  
-   target->Set(v8::String::NewSymbol("get_signal_description_by_class"),
-	       v8::FunctionTemplate::New(GetSignalDescriptionByClass)->GetFunction());  
+  //signals
+  target->Set(v8::String::NewSymbol("get_signals_description"),
+	      v8::FunctionTemplate::New(GetSignalsDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_signal_description"),
+	      v8::FunctionTemplate::New(GetSignalDescription)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_signals_description_by_class"),
+	      v8::FunctionTemplate::New(GetSignalsDescriptionByClass)->GetFunction());  
+  target->Set(v8::String::NewSymbol("get_signal_description_by_class"),
+	      v8::FunctionTemplate::New(GetSignalDescriptionByClass)->GetFunction());  
    
-   //signal subscription
-   target->Set(v8::String::NewSymbol("register_signal_callback"),
+  //signal subscription
+  target->Set(v8::String::NewSymbol("register_signal_callback"),
     	      v8::FunctionTemplate::New(RegisterSignalCallback)->GetFunction());
-   target->Set(v8::String::NewSymbol("subscribe_to_signal"),
-	       v8::FunctionTemplate::New(SubscribeToSignal)->GetFunction());   
-   target->Set(v8::String::NewSymbol("unsubscribe_to_signal"),
-	       v8::FunctionTemplate::New(UnsubscribeToSignal)->GetFunction());  
-   target->Set(v8::String::NewSymbol("list_subscribed_signals"),
-	       v8::FunctionTemplate::New(ListSubscribedSignals)->GetFunction());  
+  target->Set(v8::String::NewSymbol("subscribe_to_signal"),
+	      v8::FunctionTemplate::New(SubscribeToSignal)->GetFunction());   
+  target->Set(v8::String::NewSymbol("unsubscribe_to_signal"),
+	      v8::FunctionTemplate::New(UnsubscribeToSignal)->GetFunction());  
+  target->Set(v8::String::NewSymbol("list_subscribed_signals"),
+	      v8::FunctionTemplate::New(ListSubscribedSignals)->GetFunction());  
 }
 
 NODE_MODULE(switcher_addon, Init)
