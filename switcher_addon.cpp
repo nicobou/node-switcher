@@ -676,7 +676,7 @@ gpointer
 set_runtime_invoker (gpointer name)
 {
   if (switcher_container[0]->has_method ((char *)name, "set_runtime"))
-    switcher_container[0]->invoke_va ((char *)name, "set_runtime", NULL, "pipeline0", NULL);
+    switcher_container[0]->invoke_va ((char *)name, "set_runtime", NULL, "single_runtime", NULL);
   g_free (name);
   return NULL;
 }
@@ -858,7 +858,7 @@ void Init(v8::Handle<v8::Object> target) {
   
   switcher_manager->make_property_subscriber ("prop_sub", property_cb, NULL);
   
-  switcher_manager->create ("runtime");
+  switcher_manager->create ("runtime", "single_runtime");
   switcher_container.push_back (switcher_manager); // keep reference only in the container
   
   switcher_manager->make_signal_subscriber ("signal_sub", signal_cb, NULL);
