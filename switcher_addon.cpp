@@ -139,7 +139,7 @@ v8::Handle<v8::Value> Remove(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
   }
   if (!args[0]->IsString() ) {
-    ThrowException(v8::Exception::TypeError(v8::String::New("switcher create: Wrong first arguments type")));
+    ThrowException(v8::Exception::TypeError(v8::String::New("switcher remove: Wrong first arguments type")));
     return scope.Close(v8::Undefined());
   }
   v8::String::AsciiValue first_arg(args[0]->ToString());
