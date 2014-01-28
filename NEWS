@@ -1,0 +1,19 @@
+Node-switcher release notes
+===================
+
+Node-switcher 0.4.0 (2014-01-28)
+-------------------------
+This is an official release in the 0.4 stable series. 
+
+New features:
+
+* works with switcher 0.4
+
+Node-switcher 0.2.0 (2013-07-05)
+-------------------------
+This release is a developer snapshot in the stable 0.2 series.
+
+New features:
+
+* Use the functionnality of switcher 0.2
+
