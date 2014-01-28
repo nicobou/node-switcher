@@ -1,7 +1,7 @@
 {
     "name": "node-switcher",
     "description": "Nodejs addon to manage swichter",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "author" : {
         "name": "Nicolas",
         "email": "",
