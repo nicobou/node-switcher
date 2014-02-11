@@ -672,16 +672,6 @@ void NotifySignal (uv_work_t *r) {
   }
 }
 
-gpointer
-set_runtime_invoker (gpointer name)
-{
-  if (switcher_container[0]->has_method ((char *)name, "set_runtime"))
-    switcher_container[0]->invoke_va ((char *)name, "set_runtime", NULL, "single_runtime", NULL);
-  g_free (name);
-  return NULL;
-}
-
-
 //call client signal callback
 static void 
 signal_cb (std::string subscriber_name,
@@ -690,13 +680,6 @@ signal_cb (std::string subscriber_name,
 	   std::vector<std::string> params, 
 	   void *user_data)
 {
-  if (g_strcmp0 (signal_name.c_str (), "on-quiddity-created") == 0
-      && switcher_is_loading == false)
-    g_thread_create (set_runtime_invoker, 
-		     g_strdup (params[0].c_str ()),
-		     FALSE,
-		     NULL);
-  
   async_req_signal *req = new async_req_signal ();
   req->req.data = req;
   req->quiddity_name = quiddity_name;
