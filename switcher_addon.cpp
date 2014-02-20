@@ -823,8 +823,8 @@ void Init(v8::Handle<v8::Object> target) {
   switcher_manager->create ("logger", "internal_logger");
   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "shmdata", NULL);
   switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GStreamer", NULL);
-  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib", NULL);
-  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "Glib-GObject", NULL);
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GLib", NULL);
+  switcher_manager->invoke_va ("internal_logger", "install_log_handler", NULL, "GLib-GObject", NULL);
   switcher_manager->set_property ("internal_logger", "mute", "false");
   switcher_manager->set_property ("internal_logger", "debug", "true");
   switcher_manager->set_property ("internal_logger", "verbose", "true");
