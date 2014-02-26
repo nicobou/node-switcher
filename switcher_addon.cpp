@@ -21,6 +21,7 @@
 #include <v8.h>
 #include <uv.h>
 #include <switcher/quiddity-manager.h>
+#include "locale.h"
 
 static std::vector<switcher::QuiddityManager::ptr> switcher_container;
 static v8::Persistent<v8::Function> user_log_cb; //must be disposed
@@ -815,8 +816,9 @@ v8::Handle<v8::Value> GetSignalDescriptionByClass(const v8::Arguments& args) {
 
 
 // ------------ node init functions -------------------------------
-void Init(v8::Handle<v8::Object> target) {
-
+void Init(v8::Handle<v8::Object> target) 
+{
+  setlocale (LC_ALL, "");
   switcher::QuiddityManager::ptr switcher_manager 
     = switcher::QuiddityManager::make_manager ("nodeserver");  
   
